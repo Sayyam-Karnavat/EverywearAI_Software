@@ -1,0 +1,21 @@
+{
+    "manifest_version": 3,
+    "name": "Draggable ChatGPT Icon",
+    "version": "1.0",
+    "description": "Draggable ChatGPT icon to show the ChatGPT website in a popup.",
+    "action": {
+      "default_icon": "icon.png"
+    },
+    "permissions": [
+      "activeTab",
+      "scripting"
+    ],
+    "background": {
+      "service_worker": "background.js"
+    },
+    "host_permissions": [
+      "http://*/*",
+      "https://*/*"
+    ]
+  }
+  

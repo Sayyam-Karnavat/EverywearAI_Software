@@ -1,0 +1,94 @@
+#circular-icon {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 50px;
+  height: 50px;
+  background-color: #007bff;
+  color: white;
+  font-size: 24px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 50%;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  z-index: 9999;
+  cursor: pointer;
+  user-select: none; /* Prevent text selection */
+}
+
+#action-buttons {
+  position: fixed;
+  z-index: 9999;
+}
+
+#action-buttons button {
+  margin: 5px;
+  padding: 10px;
+  font-size: 16px;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+#action-buttons #tick-btn {
+  background-color: #28a745;
+  color: white;
+}
+
+#action-buttons #cross-btn {
+  background-color: #dc3545;
+  color: white;
+}
+
+#draggable-header {
+  background-color: #007bff;
+  color: white;
+  padding: 10px;
+  cursor: move;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+#llm-overlay {
+  position: fixed;
+  width: 300px;
+  height: 400px;
+  background-color: #fff;
+  border: 1px solid #ccc;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+}
+
+#chat-area {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+#messages {
+  flex-grow: 1; /* Allow messages to grow */
+  overflow-y: auto; /* Enable vertical scrolling */
+  padding: 10px;
+  margin-bottom: 10px;
+  max-height: 300px; /* Optional: Set max height if necessary */
+}
+
+#query-input {
+  margin: 10px;
+  padding: 5px;
+  width: calc(100% - 22px);
+}
+
+#send-btn {
+  padding: 10px;
+  margin: 5px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  cursor: pointer;
+  width: 100%;
+}

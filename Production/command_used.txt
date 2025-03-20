@@ -1,0 +1,18 @@
+1. First run the below command
+pyinstaller --onefile --windowed --exclude-module PySide6.scripts.deploy_lib --add-data "company_logo.png;." --add-data "show_icon.png;." ^
+--paths=".venv\Lib\site-packages" ^
+--hidden-import PySide6 ^
+--hidden-import PySide6.QtCore ^
+--hidden-import PySide6.QtGui ^
+--hidden-import PySide6.QtWidgets ^
+--hidden-import PySide6.QtWebEngineWidgets ^
+--collect-all PySide6 ^
+--collect-all shiboken6 ^
+app.py
+
+
+
+
+# Guide to use pyinstaller ** very important link **
+ - https://earthly.dev/blog/pyinstaller/
+

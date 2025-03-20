@@ -38,6 +38,7 @@ def validate_token_from_file():
 
     else:
         print("Token file does not exist!")
+        
         return 0  # File does not exist
 
 

@@ -225,11 +225,11 @@ class BrowserWindow(QMainWindow):
 
     def set_medium_size(self):
         # Set the browser window size to medium
-        self.setFixedSize(900,700)
+        self.setFixedSize(800,650)
 
     def set_large_size(self):
         # Set the browser window size to large
-        self.setFixedSize(1100,900)
+        self.setFixedSize(900,750)
 
     def mousePressEvent(self, event: QMouseEvent):
         if event.button() == Qt.LeftButton:

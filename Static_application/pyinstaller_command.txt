@@ -1,0 +1,26 @@
+pyinstaller --onefile --noconsole --add-data "icon.png;." app.py
+
+
+
+
+
+( IF the icon is not getting displayed after converting and adding it icon into exe using --add-data)
+Key Changes Explained
+Added resource_path Function:
+This function checks if the application is running as a bundled executable (sys._MEIPASS exists) or as a script.
+When bundled, it uses sys._MEIPASS to locate icon.png in the temporary extraction directory.
+When running as a script, it uses the directory of the script file (__file__) to find icon.png.
+This ensures the icon is found in both development and bundled environments.
+Updated __main__ Block:
+Changed icon_path = "icon.png" to icon_path = resource_path("icon.png") to use the dynamic path resolution.
+Added Debug Output in FloatingIcon:
+Added a check with pixmap.isNull() to print an error message if the icon fails to load, helping diagnose issues during testing.
+
+PyInstaller Command
+
+pyinstaller --onefile --noconsole --add-data "icon.png;." app.py
+
+
+--onefile: Bundles everything into a single executable.
+--noconsole: Hides the console window (remove temporarily for debugging if needed).
+--add-data "icon.png;.": Includes icon.png from the current directory (.) and places it in the root of the temporary directory (;. specifies the destination as the root).

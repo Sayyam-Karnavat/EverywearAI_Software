@@ -4,7 +4,7 @@ pyinstaller --onefile --noconsole --add-data "company_logo.png;." --add-data "sh
 
 
 
-2. Pyinstaller --oneifle --no-console
+2. Pyinstaller --onefile --no-console
 
 
 # Guide to use pyinstaller ** very important link **

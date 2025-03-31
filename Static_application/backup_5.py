@@ -6,146 +6,9 @@ from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
                               QSplitter, QTextBrowser)
 from PySide6.QtWebEngineWidgets import QWebEngineView
 from PySide6.QtGui import QPixmap
-from PySide6.QtCore import Qt, QUrl, QRect, QPropertyAnimation, QEasingCurve , QSize
+from PySide6.QtCore import Qt, QUrl, QRect, QPropertyAnimation, QEasingCurve
 from PySide6.QtGui import QAction
 from PySide6.QtWebEngineCore import QWebEngineProfile
-
-
-class IconSelectionDialog(QDialog):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setWindowFlags(Qt.FramelessWindowHint | Qt.Dialog | Qt.WindowStaysOnTopHint)
-        self.setAttribute(Qt.WA_TranslucentBackground)
-        
-        # Set size and position
-        screen_geometry = QApplication.primaryScreen().geometry()
-        dialog_width = 300
-        dialog_height = 150
-        x = (screen_geometry.width() - dialog_width) // 2
-        y = (screen_geometry.height() - dialog_height) // 2
-        self.setGeometry(x, y, dialog_width, dialog_height)
-        
-        self.init_ui()
-        self.selected_url = None
-        self.selected_theme = None
-    
-    def init_ui(self):
-        container = QWidget()
-        main_layout = QVBoxLayout()
-        
-        # Title
-        title_label = QLabel("Select AI Assistant")
-        title_label.setStyleSheet("color: white; font-size: 16px; font-weight: bold; text-align: center;")
-        title_label.setAlignment(Qt.AlignCenter)
-        
-        # Icons layout
-        icons_layout = QHBoxLayout()
-        
-        # ChatGPT icon
-        self.chatgpt_button = QPushButton()
-        self.chatgpt_button.setFixedSize(100, 100)
-        self.chatgpt_button.setStyleSheet("""
-            QPushButton {
-                background-color: #202123;
-                border-radius: 10px;
-                border: 2px solid #10a37f;
-                padding: 5px;
-            }
-            QPushButton:hover {
-                border: 2px solid white;
-                background-color: #343541;
-            }
-        """)
-        
-        # Check if ChatGPT icon exists, if not use a text label
-        if os.path.exists("chatgpt.png"):
-            chatgpt_icon = QPixmap("chatgpt.png").scaled(80, 80, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-            self.chatgpt_button.setIcon(chatgpt_icon)
-            self.chatgpt_button.setIconSize(QSize(80, 80))
-        else:
-            self.chatgpt_button.setText("ChatGPT")
-            self.chatgpt_button.setStyleSheet(self.chatgpt_button.styleSheet() + "color: white; font-weight: bold;")
-        
-        chatgpt_label = QLabel("ChatGPT")
-        chatgpt_label.setStyleSheet("color: white; text-align: center;")
-        chatgpt_label.setAlignment(Qt.AlignCenter)
-        
-        chatgpt_layout = QVBoxLayout()
-        chatgpt_layout.addWidget(self.chatgpt_button)
-        chatgpt_layout.addWidget(chatgpt_label)
-        
-        # Grok icon
-        self.grok_button = QPushButton()
-        self.grok_button.setFixedSize(100, 100)
-        self.grok_button.setStyleSheet("""
-            QPushButton {
-                background-color: #000000;
-                border-radius: 10px;
-                border: 2px solid #1DA1F2;
-                padding: 5px;
-            }
-            QPushButton:hover {
-                border: 2px solid white;
-                background-color: #15202B;
-            }
-        """)
-        
-        # Check if Grok icon exists, if not use a text label
-        if os.path.exists("grok.png"):
-            grok_icon = QPixmap("grok.png").scaled(80, 80, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-            self.grok_button.setIcon(grok_icon)
-            self.grok_button.setIconSize(QSize(80, 80))
-        else:
-            self.grok_button.setText("Grok")
-            self.grok_button.setStyleSheet(self.grok_button.styleSheet() + "color: white; font-weight: bold;")
-        
-        grok_label = QLabel("Grok")
-        grok_label.setStyleSheet("color: white; text-align: center;")
-        grok_label.setAlignment(Qt.AlignCenter)
-        
-        grok_layout = QVBoxLayout()
-        grok_layout.addWidget(self.grok_button)
-        grok_layout.addWidget(grok_label)
-        
-        # Add to icons layout
-        icons_layout.addLayout(chatgpt_layout)
-        icons_layout.addLayout(grok_layout)
-        
-        # Connect button signals
-        self.chatgpt_button.clicked.connect(self.select_chatgpt)
-        self.grok_button.clicked.connect(self.select_grok)
-        
-        # Add all components to main layout
-        main_layout.addWidget(title_label)
-        main_layout.addLayout(icons_layout)
-        
-        container.setLayout(main_layout)
-        container.setStyleSheet("background-color: #1e1e1e; border-radius: 10px; border: 3px solid #10a37f;")
-        
-        dialog_layout = QVBoxLayout(self)
-        dialog_layout.setContentsMargins(0, 0, 0, 0)
-        dialog_layout.addWidget(container)
-    
-    def select_chatgpt(self):
-        self.selected_url = "https://chat.openai.com"
-        self.selected_theme = {
-            "border_color": "#10a37f",
-            "button_color": "#10a37f",
-            "submenu_color": "#0d846b",
-            "size_color": "#0b6d58"
-        }
-        self.accept()
-    
-    def select_grok(self):
-        self.selected_url = "https://grok.com/"
-        self.selected_theme = {
-            "border_color": "#1DA1F2",
-            "button_color": "#1DA1F2",
-            "submenu_color": "#0C7ABF",
-            "size_color": "#0A5C8F"
-        }
-        self.accept()
-
 
 class PromptCreatorDialog(QDialog):
     def __init__(self, parent=None):
@@ -382,23 +245,12 @@ class PromptViewerDialog(QDialog):
         self.animation = animation  # Store reference to prevent garbage collection
 
 class FloatingBrowser(QMainWindow):
-    def __init__(self, icon_geometry, close_callback, url="https://www.google.com", theme=None):
+    def __init__(self, icon_geometry, close_callback):
         super().__init__()
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool)
         self.setAttribute(Qt.WA_TranslucentBackground)
         self.close_callback = close_callback
         self.icon_geometry = icon_geometry
-        
-        # Set default theme if none provided
-        if theme is None:
-            self.theme = {
-                "border_color": "#10a37f",
-                "button_color": "#10a37f",
-                "submenu_color": "#0d846b",
-                "size_color": "#0b6d58"
-            }
-        else:
-            self.theme = theme
 
         # Get screen dimensions
         self.screen = QApplication.primaryScreen()
@@ -415,7 +267,6 @@ class FloatingBrowser(QMainWindow):
         new_y = icon_geometry.y() - self.browser_height + icon_geometry.height() // 2
         
         self.setGeometry(new_x, new_y, self.browser_width, self.browser_height)
-        self.url = url
         self.init_ui()
         self.animate_open()
 
@@ -424,13 +275,13 @@ class FloatingBrowser(QMainWindow):
         profile.setHttpUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36")
 
         self.browser = QWebEngineView()
-        self.browser.setUrl(QUrl(self.url))
+        self.browser.setUrl(QUrl("https://www.google.com"))
         self.browser.setStyleSheet("background-color: #1e1e1e; border-radius: 10px;")
 
-        # Create buttons with themed colors
-        self.prompt_button = self.create_button("Prompt", self.theme["submenu_color"])
-        self.size_button = self.create_button("Size", self.theme["size_color"])
-        self.close_button = self.create_button("Close", self.theme["button_color"])
+        # Create buttons
+        self.prompt_button = self.create_button("Prompt", "#0d846b")
+        self.size_button = self.create_button("Size", "#0b6d58")
+        self.close_button = self.create_button("Close", "#10a37f")
         self.close_button.clicked.connect(self.close_callback)
 
         # Create submenu layout
@@ -591,29 +442,12 @@ class FloatingIcon(QWidget):
         self.icon_label.mousePressEvent = self.toggle_browser
         
         self.browser_window = None
-        self.selected_url = None
-        self.selected_theme = None
 
     def toggle_browser(self, event):
         if self.browser_window and self.browser_window.isVisible():
             self.browser_window.animate_close(self.browser_window.hide)
         else:
-            # If we haven't selected a service yet or browser is closed, show the selection dialog
-            if not self.selected_url or not self.browser_window:
-                selection_dialog = IconSelectionDialog()
-                if selection_dialog.exec() == QDialog.Accepted:
-                    self.selected_url = selection_dialog.selected_url
-                    self.selected_theme = selection_dialog.selected_theme
-                else:
-                    return  # User canceled the dialog
-            
-            # Create browser with selected URL and theme
-            self.browser_window = FloatingBrowser(
-                self.geometry(), 
-                self.close_application, 
-                self.selected_url, 
-                self.selected_theme
-            )
+            self.browser_window = FloatingBrowser(self.geometry(), self.close_application)
             self.browser_window.show()
     
     def close_application(self):

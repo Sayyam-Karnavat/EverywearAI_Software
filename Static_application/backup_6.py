@@ -626,5 +626,4 @@ if __name__ == "__main__":
     icon_path = "icon.png"  # Ensure the correct path is provided
     floating_icon = FloatingIcon(icon_path)
     floating_icon.show()
-    
     sys.exit(app.exec())

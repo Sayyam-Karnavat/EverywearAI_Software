@@ -11,16 +11,28 @@ This function checks if the application is running as a bundled executable (sys.
 When bundled, it uses sys._MEIPASS to locate icon.png in the temporary extraction directory.
 When running as a script, it uses the directory of the script file (__file__) to find icon.png.
 This ensures the icon is found in both development and bundled environments.
-Updated __main__ Block:
-Changed icon_path = "icon.png" to icon_path = resource_path("icon.png") to use the dynamic path resolution.
-Added Debug Output in FloatingIcon:
-Added a check with pixmap.isNull() to print an error message if the icon fails to load, helping diagnose issues during testing.
 
-PyInstaller Command
+Example
 
-pyinstaller --onefile --noconsole --add-data "icon.png;." app.py
+import sys
+import os
 
+def resource_path(relative_path):
+    """Get the absolute path to a resource, works for development and PyInstaller bundles."""
+    if hasattr(sys, '_MEIPASS'):
+        # Running as a bundled executable (PyInstaller)
+        return os.path.join(sys._MEIPASS, relative_path)
+    else:
+        # Running as a script
+        return os.path.join(os.path.dirname(__file__), relative_path)
 
---onefile: Bundles everything into a single executable.
---noconsole: Hides the console window (remove temporarily for debugging if needed).
---add-data "icon.png;.": Includes icon.png from the current directory (.) and places it in the root of the temporary directory (;. specifies the destination as the root).
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    app.setQuitOnLastWindowClosed(False)
+    
+    # Use resource_path to dynamically resolve the path to chatgpt.png
+    icon_path = resource_path("chatgpt.png")  # Ensure chatgpt.png is in the same directory as the script
+    floating_icon = FloatingIcon(icon_path)
+    floating_icon.show()
+    
+    sys.exit(app.exec())

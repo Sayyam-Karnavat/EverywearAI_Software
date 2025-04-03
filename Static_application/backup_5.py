@@ -10,6 +10,19 @@ from PySide6.QtCore import Qt, QUrl, QRect, QPropertyAnimation, QEasingCurve
 from PySide6.QtGui import QAction
 from PySide6.QtWebEngineCore import QWebEngineProfile
 
+
+
+def resource_path(relative_path):
+    """Get the absolute path to a resource, works for development and PyInstaller bundles."""
+    if hasattr(sys, '_MEIPASS'):
+        # Running as a bundled executable (PyInstaller)
+        return os.path.join(sys._MEIPASS, relative_path)
+    else:
+        # Running as a script
+        return os.path.join(os.path.dirname(__file__), relative_path)
+    
+
+
 class PromptCreatorDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -97,7 +110,7 @@ class PromptCreatorDialog(QDialog):
             filename += '.txt'
         
         # Save to the Prompts folder in the current directory
-        save_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Prompts")
+        save_dir ="Prompts"
         os.makedirs(save_dir, exist_ok=True)
         
         file_path = os.path.join(save_dir, filename)
@@ -258,9 +271,9 @@ class FloatingBrowser(QMainWindow):
         self.screen_width = self.screen_geometry.width()
         self.screen_height = self.screen_geometry.height()
         
-        # Calculate initial size based on screen dimensions (medium size)
-        self.browser_width = int(self.screen_width * 0.4)  # 40% of screen width
-        self.browser_height = int(self.screen_height * 0.5)  # 50% of screen height
+        # Calculate initial size based on screen dimensions (Small size)
+        self.browser_width = int(self.screen_width * 0.7)  
+        self.browser_height = int(self.screen_height * 0.6)
         
         # Position the window so its bottom-right corner aligns with the left side of the icon
         new_x = icon_geometry.x() - self.browser_width
@@ -275,7 +288,7 @@ class FloatingBrowser(QMainWindow):
         profile.setHttpUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36")
 
         self.browser = QWebEngineView()
-        self.browser.setUrl(QUrl("https://www.google.com"))
+        self.browser.setUrl(QUrl("https://chat.openai.com"))
         self.browser.setStyleSheet("background-color: #1e1e1e; border-radius: 10px;")
 
         # Create buttons
@@ -294,14 +307,14 @@ class FloatingBrowser(QMainWindow):
         submenu_layout.setStretch(1, 1)
         
         # Calculate sizes based on screen dimensions
-        small_width = int(self.screen_width * 0.3)  # 30% of screen width
-        small_height = int(self.screen_height * 0.4)  # 40% of screen height
+        small_width = int(self.screen_width * 0.7)  # 30% of screen width
+        small_height = int(self.screen_height * 0.6)  # 40% of screen height
         
-        medium_width = int(self.screen_width * 0.4)  # 40% of screen width
-        medium_height = int(self.screen_height * 0.5)  # 50% of screen height
+        medium_width = int(self.screen_width * 0.8)  # 40% of screen width
+        medium_height = int(self.screen_height * 0.7)  # 50% of screen height
         
-        large_width = int(self.screen_width * 0.5)  # 50% of screen width
-        large_height = int(self.screen_height * 0.65)  # 65% of screen height
+        large_width = int(self.screen_width * 0.9)  # 50% of screen width
+        large_height = int(self.screen_height * 0.8)  # 65% of screen height
         
         # Create size menu
         self.size_menu = QMenu(self)
@@ -457,7 +470,8 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     app.setQuitOnLastWindowClosed(False)
     
-    icon_path = "icon.png"  # Ensure the correct path is provided
+    # Use resource_path to dynamically resolve the path to chatgpt.png
+    icon_path = resource_path("chatgpt.png") 
     floating_icon = FloatingIcon(icon_path)
     floating_icon.show()
     

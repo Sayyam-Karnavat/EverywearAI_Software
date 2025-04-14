@@ -1,4 +1,4 @@
-pyinstaller --onefile --noconsole --add-data "icon.png;." app.py
+pyinstaller --onefile --noconsole --add-data "chatgpt.png;." backup_5.py
 
 
 

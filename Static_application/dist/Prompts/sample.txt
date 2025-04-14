@@ -1,0 +1,2 @@
+This is a sample prompt.
+You can create your own prompts using the Create option.

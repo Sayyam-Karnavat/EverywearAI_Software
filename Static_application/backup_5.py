@@ -216,7 +216,7 @@ class PromptViewerDialog(QDialog):
     
     def load_prompts(self):
         # Get prompts folder path
-        prompts_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Prompts")
+        prompts_dir = "Prompts"
         
         # Create the folder if it doesn't exist
         if not os.path.exists(prompts_dir):

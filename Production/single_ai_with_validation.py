@@ -89,7 +89,7 @@ class RegistrationDialog(QDialog):
         
         # Send verification request to server
         try:
-            response = requests.post("http://your-server.com/verify", json={"token": token})
+            response = requests.post("https://c38718d276c1.ngrok-free.app/register", json={"token": token})
             response_data = response.json()
             
             if response_data.get("verified") == "yes":
@@ -636,9 +636,9 @@ class FloatingIcon(QWidget):
         else:
             self.show_registration()
 
-    def verify_token(self, token):
+    def verify_token(self, token):  
         try:
-            response = requests.post("http://your-server.com/verify", json={"token": token})
+            response = requests.post("https://c38718d276c1.ngrok-free.app/verify", json={"token": token})
             response_data = response.json()
             
             if response_data.get("verified") == "yes":

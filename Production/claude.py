@@ -1,9 +1,10 @@
 import sys
 import os
+import requests
 from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
                               QPushButton, QLabel, QGraphicsOpacityEffect, QMenu, QLineEdit, 
                               QTextEdit, QFileDialog, QDialog, QListWidget, QListWidgetItem,
-                              QSplitter, QTextBrowser)
+                              QSplitter, QTextBrowser, QMessageBox)
 from PySide6.QtWebEngineWidgets import QWebEngineView
 from PySide6.QtGui import QPixmap, QClipboard
 from PySide6.QtCore import Qt, QUrl, QRect, QPropertyAnimation, QEasingCurve, QTimer
@@ -16,6 +17,108 @@ def resource_path(relative_path):
         return os.path.join(sys._MEIPASS, relative_path)
     else:
         return os.path.join(os.path.dirname(__file__), relative_path)
+
+class RegistrationDialog(QDialog):
+    def __init__(self, parent=None, on_success_callback=None):
+        super().__init__(parent)
+        self.setWindowFlags(Qt.FramelessWindowHint | Qt.Dialog)
+        self.setAttribute(Qt.WA_TranslucentBackground)
+        self.setModal(True)
+        self.on_success_callback = on_success_callback
+        
+        # Set dialog size
+        dialog_width = 400
+        dialog_height = 200
+        
+        # Center dialog on the screen
+        screen = QApplication.primaryScreen().availableGeometry()
+        x = (screen.width() - dialog_width) // 2
+        y = (screen.height() - dialog_height) // 2
+        self.setGeometry(x, y, dialog_width, dialog_height)
+        
+        self.init_ui()
+        self.animate_open()
+
+    def init_ui(self):
+        container = QWidget()
+        main_layout = QVBoxLayout()
+        
+        # Title
+        title_label = QLabel("API Token Registration")
+        title_label.setStyleSheet("color: #F5F5F5; font-size: 16px; font-weight: bold;")
+        title_label.setAlignment(Qt.AlignCenter)
+        
+        # API token input
+        self.token_input = QLineEdit()
+        self.token_input.setStyleSheet("background-color: #2A2A2A; color: #F5F5F5; border-radius: 5px; padding: 5px; border: 1px solid #4A4A4A;")
+        self.token_input.setPlaceholderText("Paste your API token here")
+        
+        # Buttons
+        buttons_layout = QHBoxLayout()
+        self.activate_button = self.create_button("Activate", "#F28C38")
+        self.activate_button.clicked.connect(self.verify_token)
+        self.close_button = self.create_button("Close", "#2A2A2A")
+        self.close_button.clicked.connect(QApplication.quit)
+        
+        buttons_layout.addWidget(self.activate_button)
+        buttons_layout.addWidget(self.close_button)
+        
+        main_layout.addWidget(title_label)
+        main_layout.addWidget(self.token_input)
+        main_layout.addLayout(buttons_layout)
+        
+        container.setLayout(main_layout)
+        container.setStyleSheet("background-color: #1E1E1E; border-radius: 10px; border: 2px solid #F28C38;")
+        
+        dialog_layout = QVBoxLayout(self)
+        dialog_layout.setContentsMargins(0, 0, 0, 0)
+        dialog_layout.addWidget(container)
+
+    def create_button(self, text, color):
+        button = QPushButton(text)
+        button.setStyleSheet(f"background-color: {color}; color: #F5F5F5; border-radius: 10px; padding: 5px; border: 2px solid transparent;")
+        button.enterEvent = lambda event: button.setStyleSheet(f"background-color: {color}; color: #F5F5F5; border-radius: 10px; padding: 5px; border: 2px solid #F5F5F5;")
+        button.leaveEvent = lambda event: button.setStyleSheet(f"background-color: {color}; color: #F5F5F5; border-radius: 10px; padding: 5px; border: 2px solid transparent;")
+        return button
+
+    def verify_token(self):
+        token = self.token_input.text().strip()
+        if not token:
+            QMessageBox.warning(self, "Error", "Please enter an API token.")
+            return
+        
+        # Send verification request to server
+        try:
+            response = requests.post("https://c38718d276c1.ngrok-free.app/register", json={"token": token})
+            response_data = response.json()
+            
+            if response_data.get("verified") == "yes":
+                # Save token to file
+                config_dir = "config"
+                os.makedirs(config_dir, exist_ok=True)
+                with open(os.path.join(config_dir, "api_token.txt"), "w") as f:
+                    f.write(token)
+                self.close()
+                if self.on_success_callback:
+                    self.on_success_callback()
+            else:
+                QMessageBox.critical(self, "Error", "Invalid API token. Please try again.")
+        except Exception as e:
+            print(f"Verification error: {e}")
+            QMessageBox.critical(self, "Error", f"Failed to verify token: {e}")
+
+    def animate_open(self):
+        effect = QGraphicsOpacityEffect(self)
+        self.setGraphicsEffect(effect)
+        
+        animation = QPropertyAnimation(effect, b"opacity")
+        animation.setDuration(300)
+        animation.setStartValue(0)
+        animation.setEndValue(1)
+        animation.setEasingCurve(QEasingCurve.OutCubic)
+        animation.start()
+        
+        self.animation = animation
 
 class ToastNotification(QWidget):
     def __init__(self, message, parent=None):
@@ -48,7 +151,7 @@ class ToastNotification(QWidget):
         
         label = QLabel(message)
         label.setStyleSheet("""
-            color: #E6F3FF;
+            color: #F5F5F5;
             font-size: 12px;
             font-weight: bold;
         """)
@@ -59,9 +162,9 @@ class ToastNotification(QWidget):
         
         self.setStyleSheet("""
             QWidget {
-                background-color: rgba(10, 26, 47, 0.9);
+                background-color: rgba(30, 30, 30, 0.9);
                 border-radius: 15px;
-                border: 2px solid #4AB8F4;
+                border: 2px solid #F28C38;
             }
         """)
     
@@ -111,24 +214,24 @@ class PromptCreatorDialog(QDialog):
         
         filename_layout = QHBoxLayout()
         filename_label = QLabel("File Name:")
-        filename_label.setStyleSheet("color: #E6F3FF;")
+        filename_label.setStyleSheet("color: #F5F5F5;")
         self.filename_input = QLineEdit()
-        self.filename_input.setStyleSheet("background-color: #2C1B47; color: #E6F3FF; border-radius: 5px; padding: 5px;")
+        self.filename_input.setStyleSheet("background-color: #2A2A2A; color: #F5F5F5; border-radius: 5px; padding: 5px; border: 1px solid #4A4A4A;")
         self.filename_input.setPlaceholderText("Enter file name (without extension)")
         
         filename_layout.addWidget(filename_label)
         filename_layout.addWidget(self.filename_input)
         
         self.content_text = QTextEdit()
-        self.content_text.setStyleSheet("background-color: #2C1B47; color: #E6F3FF; border-radius: 5px; padding: 5px;")
+        self.content_text.setStyleSheet("background-color: #2A2A2A; color: #F5F5F5; border-radius: 5px; padding: 5px; border: 1px solid #4A4A4A;")
         self.content_text.setPlaceholderText("Write your prompt here...")
         
         buttons_layout = QHBoxLayout()
         
-        self.save_button = self.create_button("Save", "#4AB8F4")
+        self.save_button = self.create_button("Save", "#F28C38")
         self.save_button.clicked.connect(self.save_prompt)
         
-        self.cancel_button = self.create_button("Cancel", "#2C1B47")
+        self.cancel_button = self.create_button("Cancel", "#2A2A2A")
         self.cancel_button.clicked.connect(self.close)
         
         buttons_layout.addWidget(self.save_button)
@@ -139,7 +242,7 @@ class PromptCreatorDialog(QDialog):
         main_layout.addLayout(buttons_layout)
         
         container.setLayout(main_layout)
-        container.setStyleSheet("background-color: #0A1A2F; border-radius: 10px; border: 3px solid #4AB8F4;")
+        container.setStyleSheet("background-color: #1E1E1E; border-radius: 10px; border: 2px solid #F28C38;")
         
         dialog_layout = QVBoxLayout(self)
         dialog_layout.setContentsMargins(0, 0, 0, 0)
@@ -147,9 +250,9 @@ class PromptCreatorDialog(QDialog):
     
     def create_button(self, text, color):
         button = QPushButton(text)
-        button.setStyleSheet(f"background-color: {color}; color: #E6F3FF; border-radius: 10px; padding: 5px; border: 2px solid transparent;")
-        button.enterEvent = lambda event: button.setStyleSheet(f"background-color: {color}; color: #E6F3FF; border-radius: 10px; padding: 5px; border: 2px solid #E6F3FF;")
-        button.leaveEvent = lambda event: button.setStyleSheet(f"background-color: {color}; color: #E6F3FF; border-radius: 10px; padding: 5px; border: 2px solid transparent;")
+        button.setStyleSheet(f"background-color: {color}; color: #F5F5F5; border-radius: 10px; padding: 5px; border: 2px solid transparent;")
+        button.enterEvent = lambda event: button.setStyleSheet(f"background-color: {color}; color: #F5F5F5; border-radius: 10px; padding: 5px; border: 2px solid #F5F5F5;")
+        button.leaveEvent = lambda event: button.setStyleSheet(f"background-color: {color}; color: #F5F5F5; border-radius: 10px; padding: 5px; border: 2px solid transparent;")
         return button
     
     def save_prompt(self):
@@ -210,39 +313,39 @@ class PromptViewerDialog(QDialog):
     
     def init_ui(self):
         container = QWidget()
-
         main_layout = QVBoxLayout()
         
         title_label = QLabel("Prompts")
-        title_label.setStyleSheet("color: #E6F3FF; font-size: 16px; font-weight: bold;")
+        title_label.setStyleSheet("color: #F5F5F5; font-size: 16px; font-weight: bold;")
         
         self.splitter = QSplitter(Qt.Horizontal)
-        self.splitter.setStyleSheet("QSplitter::handle { background-color: #2C1B47; width: 2px; }")
+        self.splitter.setStyleSheet("QSplitter::handle { background-color: #2A2A2A; width: 2px; }")
         
         self.file_list = QListWidget()
         self.file_list.setStyleSheet("""
             QListWidget {
-                background-color: #2C1B47; 
-                color: #E6F3FF; 
+                background-color: #2A2A2A; 
+                color: #F5F5F5; 
                 border-radius: 5px;
                 outline: none;
+                border: 1px solid #4A4A4A;
             }
             QListWidget::item {
                 padding: 8px;
-                border-bottom: 1px solid #3e3e3e;
-                background-color: #2C1B47;
+                border-bottom: 1px solid #4A4A4A;
+                background-color: #2A2A2A;
             }
             QListWidget::item:hover {
-                background-color: #4a4a4a;
-                color: #E6F3FF;
+                background-color: #3A3A3A;
+                color: #F5F5F5;
             }
             QListWidget::item:selected {
-                background-color: #4AB8F4;
-                color: #E6F3FF;
+                background-color: #F28C38;
+                color: #F5F5F5;
             }
             QListWidget::item:selected:hover {
-                background-color: #2C1B47;
-                color: #E6F3FF;
+                background-color: #E07B30;
+                color: #F5F5F5;
             }
         """)
         self.file_list.itemClicked.connect(self.show_file_content)
@@ -251,11 +354,11 @@ class PromptViewerDialog(QDialog):
         right_layout = QVBoxLayout()
         
         self.content_viewer = QTextBrowser()
-        self.content_viewer.setStyleSheet("background-color: #2C1B47; color: #E6F3FF; border-radius: 5px; padding: 5px;")
+        self.content_viewer.setStyleSheet("background-color: #2A2A2A; color: #F5F5F5; border-radius: 5px; padding: 5px; border: 1px solid #4A4A4A;")
         self.content_viewer.setReadOnly(True)
         self.content_viewer.setPlaceholderText("Select a prompt to view its content")
         
-        self.copy_button = self.create_button("Copy Content", "#4AB8F4")
+        self.copy_button = self.create_button("Copy Content", "#F28C38")
         self.copy_button.clicked.connect(self.copy_content)
         self.copy_button.setEnabled(False)
         
@@ -268,7 +371,7 @@ class PromptViewerDialog(QDialog):
         
         self.splitter.setSizes([30, 70])
         
-        self.close_button = self.create_button("Close", "#2C1B47")
+        self.close_button = self.create_button("Close", "#2A2A2A")
         self.close_button.clicked.connect(self.close)
         
         main_layout.addWidget(title_label)
@@ -276,7 +379,7 @@ class PromptViewerDialog(QDialog):
         main_layout.addWidget(self.close_button)
         
         container.setLayout(main_layout)
-        container.setStyleSheet("background-color: #0A1A2F; border-radius: 10px; border: 3px solid #4AB8F4;")
+        container.setStyleSheet("background-color: #1E1E1E; border-radius: 10px; border: 2px solid #F28C38;")
         
         dialog_layout = QVBoxLayout(self)
         dialog_layout.setContentsMargins(0, 0, 0, 0)
@@ -284,9 +387,9 @@ class PromptViewerDialog(QDialog):
     
     def create_button(self, text, color):
         button = QPushButton(text)
-        button.setStyleSheet(f"background-color: {color}; color: #E6F3FF; border-radius: 10px; padding: 5px; border: 2px solid transparent;")
-        button.enterEvent = lambda event: button.setStyleSheet(f"background-color: {color}; color: #E6F3FF; border-radius: 10px; padding: 5px; border: 2px solid #E6F3FF;")
-        button.leaveEvent = lambda event: button.setStyleSheet(f"background-color: {color}; color: #E6F3FF; border-radius: 10px; padding: 5px; border: 2px solid transparent;")
+        button.setStyleSheet(f"background-color: {color}; color: #F5F5F5; border-radius: 10px; padding: 5px; border: 2px solid transparent;")
+        button.enterEvent = lambda event: button.setStyleSheet(f"background-color: {color}; color: #F5F5F5; border-radius: 10px; padding: 5px; border: 2px solid #F5F5F5;")
+        button.leaveEvent = lambda event: button.setStyleSheet(f"background-color: {color}; color: #F5F5F5; border-radius: 10px; padding: 5px; border: 2px solid transparent;")
         return button
     
     def load_prompts(self):
@@ -352,7 +455,7 @@ class FloatingBrowser(QMainWindow):
         self.browser_height = int(self.screen_height * 0.6)
         
         new_x = icon_geometry.x() - self.browser_width
-        new_y = icon_geometry.y() - self.browser_height + icon_geometry.height() // 2
+        new_y = icon_geometry.y() - self.browser_height + self.icon_geometry.height() // 2
         
         self.setGeometry(new_x, new_y, self.browser_width, self.browser_height)
         self.init_ui()
@@ -363,12 +466,12 @@ class FloatingBrowser(QMainWindow):
         profile.setHttpUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36")
 
         self.browser = QWebEngineView()
-        self.browser.setUrl(QUrl("https://grok.com"))
-        self.browser.setStyleSheet("background-color: #0A1A2F; border-radius: 10px;")
+        self.browser.setUrl(QUrl("https://claude.ai"))
+        self.browser.setStyleSheet("background-color: #1E1E1E; border-radius: 10px;")
 
-        self.prompt_button = self.create_button("Prompt", "#2C1B47")
-        self.size_button = self.create_button("Size", "#2C1B47")
-        self.close_button = self.create_button("Close", "#4AB8F4")
+        self.prompt_button = self.create_button("Prompt", "#2A2A2A")
+        self.size_button = self.create_button("Size", "#2A2A2A")
+        self.close_button = self.create_button("Close", "#F28C38")
         self.close_button.clicked.connect(self.close_callback)
 
         submenu_layout = QHBoxLayout()
@@ -388,11 +491,11 @@ class FloatingBrowser(QMainWindow):
         large_height = int(self.screen_height * 0.8)
         
         self.size_menu = QMenu(self)
-        self.size_menu.setStyleSheet("background-color: #0A1A2F; color: #E6F3FF; border-radius: 10px; border: 2px solid #2C1B47;")
+        self.size_menu.setStyleSheet("background-color: #1E1E1E; color: #F5F5F5; border-radius: 10px; border: 2px solid #4A4A4A;")
 
-        small_action = self.create_menu_action("Small", "#2C1B47", self.resize_browser, small_width, small_height)
-        medium_action = self.create_menu_action("Medium", "#2C1B47", self.resize_browser, medium_width, medium_height)
-        large_action = self.create_menu_action("Large", "#2C1B47", self.resize_browser, large_width, large_height)
+        small_action = self.create_menu_action("Small", "#2A2A2A", self.resize_browser, small_width, small_height)
+        medium_action = self.create_menu_action("Medium", "#2A2A2A", self.resize_browser, medium_width, medium_height)
+        large_action = self.create_menu_action("Large", "#2A2A2A", self.resize_browser, large_width, large_height)
 
         self.size_menu.addAction(small_action)
         self.size_menu.addAction(medium_action)
@@ -401,10 +504,10 @@ class FloatingBrowser(QMainWindow):
         self.size_button.setMenu(self.size_menu)
         
         self.prompt_menu = QMenu(self)
-        self.prompt_menu.setStyleSheet("background-color: #0A1A2F; color: #E6F3FF; border-radius: 10px; border: 2px solid #2C1B47;")
+        self.prompt_menu.setStyleSheet("background-color: #1E1E1E; color: #F5F5F5; border-radius: 10px; border: 2px solid #4A4A4A;")
         
-        create_action = self.create_menu_action("Create", "#2C1B47", self.show_prompt_creator)
-        open_action = self.create_menu_action("Open", "#2C1B47", self.open_prompt)
+        create_action = self.create_menu_action("Create", "#2A2A2A", self.show_prompt_creator)
+        open_action = self.create_menu_action("Open", "#2A2A2A", self.open_prompt)
         
         self.prompt_menu.addAction(create_action)
         self.prompt_menu.addAction(open_action)
@@ -418,7 +521,7 @@ class FloatingBrowser(QMainWindow):
         layout.addWidget(self.close_button)
         
         container.setLayout(layout)
-        container.setStyleSheet("background-color: #0A1A2F; border-radius: 10px; border: 3px solid #4AB8F4;")
+        container.setStyleSheet("background-color: #1E1E1E; border-radius: 10px; border: 2px solid #F28C38;")
 
         self.setCentralWidget(container)
         
@@ -431,9 +534,9 @@ class FloatingBrowser(QMainWindow):
     
     def create_button(self, text, color):
         button = QPushButton(text)
-        button.setStyleSheet(f"background-color: {color}; color: #E6F3FF; border-radius: 10px; padding: 5px; border: 2px solid transparent;")
-        button.enterEvent = lambda event: button.setStyleSheet(f"background-color: {color}; color: #E6F3FF; border-radius: 10px; padding: 5px; border: 2px solid #E6F3FF;")
-        button.leaveEvent = lambda event: button.setStyleSheet(f"background-color: {color}; color: #E6F3FF; border-radius: 10px; padding: 5px; border: 2px solid transparent;")
+        button.setStyleSheet(f"background-color: {color}; color: #F5F5F5; border-radius: 10px; padding: 5px; border: 2px solid transparent;")
+        button.enterEvent = lambda event: button.setStyleSheet(f"background-color: {color}; color: #F5F5F5; border-radius: 10px; padding: 5px; border: 2px solid #F5F5F5;")
+        button.leaveEvent = lambda event: button.setStyleSheet(f"background-color: {color}; color: #F5F5F5; border-radius: 10px; padding: 5px; border: 2px solid transparent;")
         return button
     
     def create_menu_action(self, text, color, slot, *args):
@@ -502,20 +605,67 @@ class FloatingIcon(QWidget):
         
         self.setGeometry(screen_geometry.width() - 100, screen_geometry.height() - 180, 80, 80)
         
-        self.init_ui(icon_path)
+        self.icon_path = icon_path
+        self.check_token()
 
-    def init_ui(self, icon_path):
+    def init_ui(self):
         layout = QVBoxLayout()
         
         self.icon_label = QLabel()
-        self.icon_label.setPixmap(QPixmap(icon_path).scaled(64, 64, Qt.KeepAspectRatio, Qt.SmoothTransformation))
-        self.icon_label.setStyleSheet("border-radius: 32px; background-color: rgba(10, 26, 47, 0.5);")
+        self.icon_label.setPixmap(QPixmap(self.icon_path).scaled(64, 64, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+        self.icon_label.setStyleSheet("border-radius: 32px; background-color: rgba(30, 30, 30, 0.5);")
         layout.addWidget(self.icon_label)
         
         self.setLayout(layout)
         self.icon_label.mousePressEvent = self.toggle_browser
         
         self.browser_window = None
+
+    def check_token(self):
+        config_dir = "config"
+        token_file = os.path.join(config_dir, "api_token.txt")
+        
+        if os.path.exists(token_file):
+            try:
+                with open(token_file, "r") as f:
+                    token = f.read().strip()
+                if token:
+                    self.verify_token(token)
+                else:
+                    self.show_registration()
+            except Exception as e:
+                print(f"Error reading token: {e}")
+                self.show_registration()
+        else:
+            self.show_registration()
+
+    def verify_token(self, token):
+        try:
+            response = requests.post("https://c38718d276c1.ngrok-free.app/verify", json={"token": token})
+            response_data = response.json()
+            
+            if response_data.get("verified") == "yes":
+                self.show_main_ui()
+            else:
+                QMessageBox.critical(self, "Error", "Invalid API token. Please enter a valid token.")
+                # Delete invalid token file
+                config_dir = "config"
+                token_file = os.path.join(config_dir, "api_token.txt")
+                if os.path.exists(token_file):
+                    os.remove(token_file)
+                self.show_registration()
+        except Exception as e:
+            print(f"Verification error: {e}")
+            QMessageBox.critical(self, "Error", f"Failed to verify token: {e}")
+            self.show_registration()
+
+    def show_registration(self):
+        self.registration_dialog = RegistrationDialog(self, self.show_main_ui)
+        self.registration_dialog.show()
+
+    def show_main_ui(self):
+        self.init_ui()
+        self.show()
 
     def toggle_browser(self, event):
         if self.browser_window and self.browser_window.isVisible():
@@ -531,8 +681,7 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     app.setQuitOnLastWindowClosed(False)
     
-    icon_path = resource_path("grok.png")
+    icon_path = resource_path("claude.png")
     floating_icon = FloatingIcon(icon_path)
-    floating_icon.show()
     
     sys.exit(app.exec())

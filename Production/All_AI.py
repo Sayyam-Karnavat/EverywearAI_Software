@@ -10,6 +10,8 @@ from PySide6.QtGui import QPixmap, QClipboard
 from PySide6.QtCore import Qt, QUrl, QRect, QPropertyAnimation, QEasingCurve, QTimer, QSize
 from PySide6.QtGui import QAction
 from PySide6.QtWebEngineCore import QWebEngineProfile
+import hashlib
+import uuid
 
 def resource_path(relative_path):
     """Get the absolute path to a resource, works for development and PyInstaller bundles."""
@@ -25,6 +27,7 @@ class RegistrationDialog(QDialog):
         self.setAttribute(Qt.WA_TranslucentBackground)
         self.setModal(True)
         self.on_success_callback = on_success_callback
+        self.secret_key = "SANYAMsuyashKARNAVATallai"
         
         dialog_width = 400
         dialog_height = 200
@@ -87,28 +90,52 @@ class RegistrationDialog(QDialog):
         """)
         return button
 
+    def generate_filename(self, user_secret: str, ext="txt"):
+        nonce = uuid.uuid4().hex
+        hash_part = hashlib.sha256((nonce + user_secret).encode()).hexdigest()[:16]
+        return f"file_{nonce}_{hash_part}.{ext}"
+
+    def validate_filename(self ,filename: str, user_secret: str):
+        try:
+            parts = filename.split("_")
+            if len(parts) != 3:
+                return False
+            nonce = parts[1]
+            hash_in_file = parts[2].split(".")[0]
+            expected_hash = hashlib.sha256((nonce + user_secret).encode()).hexdigest()[:16]
+            return hash_in_file == expected_hash
+        except Exception:
+            return False
+    
     def verify_token(self):
         token = self.token_input.text().strip()
         if not token:
             QMessageBox.warning(self, "Error", "Please enter an API token.")
             return
         
+        # Send verification request to server
         try:
-            print(f"Sending request to http://192.168.29.126:5000/verify with token: {token}")
-            response = requests.post("http://192.168.29.126:5000/verify", json={"token": token})
-            response_data = response.json()
-            print(f"Response received: {response_data}")
-            
-            if response_data.get("verified") == "yes":
-                config_dir = "config"
-                os.makedirs(config_dir, exist_ok=True)
-                with open(os.path.join(config_dir, "api_token.txt"), "w") as f:
-                    f.write(token)
-                self.close()
+
+            config_dir = "config"
+            os.makedirs(config_dir , exist_ok=True)
+            all_files = os.listdir(config_dir)
+
+            if not any(self.validate_filename(filename=filename, user_secret=self.secret_key) for filename in all_files):
+                response = requests.post("https://everywearai-website.onrender.com/register", json={"token": token})
+                response_data = response.json()
+                
+                if response_data.get("verified") == "yes":
+                    random_filename = self.generate_filename(user_secret=self.secret_key)
+                    with open(os.path.join(config_dir, random_filename), "w") as f:
+                        f.write(token)
+                    self.close()
+                    if self.on_success_callback:
+                        self.on_success_callback()
+                else:
+                    QMessageBox.critical(self, "Error", "Invalid API token. Please try again.")
+            else:
                 if self.on_success_callback:
                     self.on_success_callback()
-            else:
-                QMessageBox.critical(self, "Error", "Invalid API token. Please try again.")
         except Exception as e:
             print(f"Verification error: {e}")
             QMessageBox.critical(self, "Error", f"Failed to verify token: {e}")
@@ -790,7 +817,8 @@ class FloatingIcon(QWidget):
         self.setAttribute(Qt.WA_TranslucentBackground)
         screen_geometry = QApplication.primaryScreen().geometry()
         self.setGeometry(screen_geometry.width() - 100, screen_geometry.height() - 100, 80, 80)
-        
+        self.secret_key = "SANYAMsuyashKARNAVATallai"
+
         self.icon_path = icon_path
         self.browser_window = None
         self.selected_url = None
@@ -806,44 +834,30 @@ class FloatingIcon(QWidget):
         self.setLayout(layout)
         self.icon_label.mousePressEvent = self.toggle_browser
 
+    def validate_filename(self, filename: str, user_secret: str):
+        try:
+            parts = filename.split("_")
+            if len(parts) != 3:
+                return False
+            nonce = parts[1]
+            hash_in_file = parts[2].split(".")[0]
+            expected_hash = hashlib.sha256((nonce + user_secret).encode()).hexdigest()[:16]
+            return hash_in_file == expected_hash
+        except Exception:
+            return False
+
     def check_token(self):
-        config_dir = resource_path("config")
-        token_file = os.path.join(config_dir, "api_token.txt")
+        config_dir = "config"
+        os.makedirs(config_dir, exist_ok=True)
+        all_files = os.listdir(config_dir)
         
-        if os.path.exists(token_file):
-            try:
-                with open(token_file, "r") as f:
-                    token = f.read().strip()
-                if token:
-                    self.verify_token(token)
-                else:
-                    self.show_registration()
-            except Exception as e:
-                print(f"Error reading token: {e}")
-                self.show_registration()
+        # Check if any file in config directory is valid
+        if any(self.validate_filename(filename=filename, user_secret=self.secret_key) for filename in all_files):
+            self.show_main_ui()
         else:
             self.show_registration()
 
-    def verify_token(self, token):
-        try:
-            print(f"Sending request to http://192.168.29.126:5000/verify with token: {token}")
-            response = requests.post("http://192.168.29.126:5000/verify", json={"token": token})
-            response_data = response.json()
-            print(f"Response received: {response_data}")
-            
-            if response_data.get("verified") == "yes":
-                self.show_main_ui()
-            else:
-                QMessageBox.critical(self, "Error", "Invalid API token. Please enter a valid token.")
-                config_dir = resource_path("config")
-                token_file = os.path.join(config_dir, "api_token.txt")
-                if os.path.exists(token_file):
-                    os.remove(token_file)
-                self.show_registration()
-        except Exception as e:
-            print(f"Verification error: {e}")
-            QMessageBox.critical(self, "Error", f"Failed to verify token: {e}")
-            self.show_registration()
+    
 
     def show_registration(self):
         self.registration_dialog = RegistrationDialog(self, self.show_main_ui)

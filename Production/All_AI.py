@@ -824,7 +824,7 @@ class FloatingIcon(QWidget):
         self.selected_url = None
         self.selected_theme = None
         self.check_token()
-
+    
     def init_ui(self):
         layout = QVBoxLayout()
         self.icon_label = QLabel()
